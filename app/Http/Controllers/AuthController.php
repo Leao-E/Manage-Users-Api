@@ -18,6 +18,16 @@ class AuthController extends BaseController
         Config::set('auth.providers.users.table', 'usr_users');
     }
 
+    public function logout(Request $request)
+    {
+        try {
+            $authToken = AuthToken::query()->findOrFail($request->token);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'invalid token'], 404);
+        }
+        $authToken->delete();
+        return response()->json(['message' => 'user sucessful logout'], 200);
+    }
     public function login(Request $request)
     {
         //validate incoming request

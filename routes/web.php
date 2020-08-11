@@ -16,6 +16,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->post('login', 'AuthController@login');
     $router->post('refreshToken', 'AuthController@refreshToken');
     $router->post('checkToken', 'AuthController@checkToken');
+    $router->post('logout', 'AuthController@logout');
 
     $router->group(['prefix' => 'user'], function () use ($router) {
         $router->get('/getAll', 'UserController@getAllUsers');
