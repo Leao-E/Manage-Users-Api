@@ -20,6 +20,10 @@ class AuthController extends BaseController
 
     public function logout(Request $request)
     {
+        $this->validate($request, [
+            'token' => 'required|string',
+        ]);
+
         try {
             $authToken = AuthToken::query()->findOrFail($request->token);
         } catch (\Exception $e) {
@@ -28,6 +32,7 @@ class AuthController extends BaseController
         $authToken->delete();
         return response()->json(['message' => 'user sucessful logout'], 200);
     }
+
     public function login(Request $request)
     {
         //validate incoming request
@@ -71,6 +76,10 @@ class AuthController extends BaseController
 
     public function checkToken(Request $request)
     {
+        $this->validate($request, [
+            'token' => 'required|string',
+        ]);
+
         try {
             $response = AuthToken::validateToken($request->token);
         } catch (\Exception $e){
@@ -87,6 +96,10 @@ class AuthController extends BaseController
 
     public function refreshToken(Request $request)
     {
+        $this->validate($request, [
+            'token' => 'required|string',
+        ]);
+
         try {
             $token = AuthToken::refreshToken($request->token);
         } catch (\Exception $e){
