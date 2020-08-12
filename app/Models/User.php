@@ -4,12 +4,14 @@
 namespace App\Models;
 
 use App\Models\Pivots\UserHirerSystems;
+use App\Traits\Assets\DateUtil;
 use App\Traits\Models\UsesUUID;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Auth\Authenticatable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Lumen\Auth\Authorizable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
@@ -43,6 +45,10 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
     public function setPasswordAttribute($pass)
     {
         $this->attributes['password'] = Hash::make($pass);
+    }
+
+    static public function clearOldConfirmLoginKeys(){
+        DB::table('confirm_login')->where('expire', '<', DateUtil::now())->delete();
     }
 
     public function hirers()

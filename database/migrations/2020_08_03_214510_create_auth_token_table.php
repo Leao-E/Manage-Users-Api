@@ -9,8 +9,8 @@ class CreateAuthTokenTable extends Migration
     public function up()
     {
         Schema::create('auth_token', function (Blueprint $table) {
-            $table->string('token', '400')->primary();
-            $table->foreignUuid('user_id')->unique();
+            $table->string('token', '400')->unique();
+            $table->foreignUuid('user_id')->primary();
             $table->dateTimeTz('dt_expire');
 
             $table->foreign('user_id')

@@ -31,4 +31,8 @@ trait DateUtil {
         }
         return false;
     }
+
+    static public function now (){
+        return Carbon::now()->addHours(BRAZIL_UTC);
+    }
 }

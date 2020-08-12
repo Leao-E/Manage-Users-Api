@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Traits\Assets\DateUtil;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Laravel\Lumen\Routing\Controller as BaseController;
 use App\Models\AuthToken;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
-use mysql_xdevapi\Exception;
+use Ramsey\Uuid\Uuid;
 
 class AuthController extends BaseController
 {
@@ -18,6 +21,11 @@ class AuthController extends BaseController
         Config::set('auth.providers.users.table', 'usr_users');
     }
 
+    /*
+     * author: Emanuel F.G. Leão
+     * resume: A função apaga o token informado do
+     * banco
+     */
     public function logout(Request $request)
     {
         $this->validate($request, [
@@ -33,9 +41,24 @@ class AuthController extends BaseController
         return response()->json(['message' => 'user sucessful logout'], 200);
     }
 
+    /*
+     * author: Emanuel F.G. Leão
+     * resume: A função login checa se as credencias são
+     * validas. Caso seja um token é gerado e ocorre uma
+     * tentativa de persistir no banco. Caso o usuário já
+     * tenha um token registrado no banco será gerada uma
+     * chave de confirmação. Com a chave de confirmação o
+     * usuário pode confirmar que quer continuar com o
+     * novo token.
+     * OBS:
+     * - Um token tem vida de 1h
+     * - A chave para confirmar dura 2 minutos
+     * - Quando uma chave é usada ela é excluida
+     * - Ao fim do fluxo todas as chaves expiradas
+     * são excluidas
+     */
     public function login(Request $request)
     {
-        //validate incoming request
         $this->validate($request, [
             'email' => 'required|string',
             'password' => 'required|string',
@@ -48,7 +71,8 @@ class AuthController extends BaseController
         }
 
         $user = User::query()->where('email', $request->email)->firstOrFail();
-        $dateExpire = (new \DateTime('America/Sao_Paulo'))->add(new \DateInterval('PT1H'));
+
+        $dateExpire = DateUtil::now()->addHours(1);
 
         $authToken = new AuthToken();
         $authToken->token = $token;
@@ -58,22 +82,72 @@ class AuthController extends BaseController
         try {
             $authToken->save();
         } catch (\Exception $e){
-            $authToken = AuthToken::query()->firstOrFail('user_id', $user->id);
+            // Se não conseguir salvar o fluxo vem pra cá
 
+            //busca o registro de auth_token
+            $authToken = AuthToken::query()->where('user_id', $user->id)->firstOrFail();
 
-            if ($request->query->has('confirmlogin')){
-
+            /*
+             * se o token no banco já tiver expirado ele
+             * sobrescreve pelo token gerado. Caso contratio
+             * é gerada uma chave de confirmação com 2 min
+             * de duração
+             */
+            if (DateUtil::isPast($authToken->dt_expire)){
                 $authToken->token = $token;
                 $authToken->dt_expire = $dateExpire;
                 $authToken->update();
             }else{
-                return response()->json(['error'=>'user already has a valid token'], 403);
+                /*
+                 * Checa se foi informada a chave de confirmação
+                 * no momento do login.
+                 * Caso sim: Verifica
+                 * Caso não: Gera uma e informa
+                 */
+                if ($request->has('confirm_login_key')){
+                    $query = DB::table('confirm_login')
+                        ->where('key', $request->confirm_login_key);
+
+                    User::clearOldConfirmLoginKeys();
+
+                    $confirmKey = $query->first();
+
+                    if ($confirmKey != null and DateUtil::isFuture(new Carbon($confirmKey->expire))){
+
+                        $authToken->token = $token;
+                        $authToken->dt_expire = $dateExpire;
+                        $authToken->update();
+
+                        $query->delete();
+                    }else{
+                        return response()->json(['error' => 'ivalid key'], 400);
+                    }
+                }else{
+                    $key = Uuid::uuid4();
+                    $expire = DateUtil::now()->addMinutes(2);
+                    DB::table('confirm_login')->insert([
+                        'key' => $key,
+                        'expire' => $expire
+                    ]);
+                    return response()->json([
+                        'message' => 'credentials are associated with active token',
+                        'confirm_login_key' => $key
+                    ], 403);
+                }
             }
         }
-
         return $this->respondWithToken($token);
     }
 
+    /*
+     * author: Emanuel F.G. Leão
+     * resume: a função recebe um request que deve ter
+     * um token. Há três casos:
+     * - Token Valido: Retorna o tempo restante do token
+     * em segundos.
+     * - Token Expirado: retorna 401
+     * - Token Invalido: retorna 404
+     */
     public function checkToken(Request $request)
     {
         $this->validate($request, [
@@ -94,6 +168,12 @@ class AuthController extends BaseController
 
     }
 
+    /*
+     * author: Emanuel F.G Leão
+     * resume: A função deve receber um request com
+     * um campo token. É esperado que o token seja valido.
+     * Se for um token valido ele é atualizado.
+     */
     public function refreshToken(Request $request)
     {
         $this->validate($request, [
@@ -103,12 +183,14 @@ class AuthController extends BaseController
         try {
             $token = AuthToken::refreshToken($request->token);
         } catch (\Exception $e){
-
             return response()->json(['error' => 'invalid token'], 404);
         }
         return $this->respondWithToken($token);
     }
 
+    /*
+     * Função padrão do JWT
+     */
     private function respondWithToken($token, $expire = null)
     {
         return response()->json([
