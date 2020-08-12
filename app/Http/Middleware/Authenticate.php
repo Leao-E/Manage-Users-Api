@@ -2,8 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use Closure;
 use Illuminate\Contracts\Auth\Factory as Auth;
+use Illuminate\Support\Facades\Config;
 
 class Authenticate
 {
@@ -23,7 +25,9 @@ class Authenticate
     public function __construct(Auth $auth)
     {
         $this->auth = $auth;
-
+        Config::set('auth.providers.users.model', User::class);
+        Config::set('auth.providers.users.table', 'usr_users');
+        Config::set('jwt.user', User::class);
     }
 
     /**
