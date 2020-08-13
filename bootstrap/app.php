@@ -82,6 +82,7 @@ $app->routeMiddleware([
     'hirerOnly' => App\Http\Middleware\CheckIsHirer::class,
     'sudoOrHirer' => App\Http\Middleware\CheckIsSudoOrHirer::class,
     'regKey' => App\Http\Middleware\CheckRegKey::class,
+    'removeExpiredToken' => App\Http\Middleware\RemoveExpiredToken::class,
 ]);
 
 /*

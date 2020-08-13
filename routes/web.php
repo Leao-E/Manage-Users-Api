@@ -12,7 +12,7 @@
 */
 /** @var \Laravel\Lumen\Routing\Router $router */
 
-$router->group(['prefix' => 'api'], function () use ($router) {
+$router->group(['prefix' => 'api', 'middleware'=> 'removeExpiredToken'], function () use ($router) {
     $router->post('login', 'AuthController@login');
 
     $router->group(['middleware' => 'regKey'], function () use ($router){
