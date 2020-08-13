@@ -5,6 +5,7 @@ namespace App\Models;
 
 use App\Traits\Assets\DateUtil;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Token;
 
@@ -90,5 +91,12 @@ class AuthToken extends Model
             $nowInSeconds = $now->getTimestamp();
             return $expireInSeconds - $nowInSeconds;
         }
+    }
+
+    static public function removeExpired(){
+
+        $now = DateUtil::now();
+
+        return DB::table('auth_token')->where('dt_expire', '<', $now)->delete();
     }
 }
