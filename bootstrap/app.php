@@ -78,6 +78,10 @@ $app->configure('app');
 
 $app->routeMiddleware([
     'auth' => App\Http\Middleware\Authenticate::class,
+    'sudoOnly' => App\Http\Middleware\CheckIsSudo::class,
+    'hirerOnly' => App\Http\Middleware\CheckIsHirer::class,
+    'sudoOrHirer' => App\Http\Middleware\CheckIsSudoOrHirer::class,
+    'regKey' => App\Http\Middleware\CheckRegKey::class,
 ]);
 
 /*
