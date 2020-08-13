@@ -6,6 +6,7 @@ namespace App\Models;
 use App\Traits\Assets\DateUtil;
 use Illuminate\Database\Eloquent\Model;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\Token;
 
 class AuthToken extends Model
 {
@@ -47,6 +48,9 @@ class AuthToken extends Model
         $newToken = JWTAuth::fromUser($user);
 
         if (DateUtil::isFuture($token->dt_expire)){
+
+            JWTAuth::manager()->invalidate(new Token($token->token));
+
             $token->token = $newToken;
             $token->dt_expire = $now->addHours(1);
             $token->update();
