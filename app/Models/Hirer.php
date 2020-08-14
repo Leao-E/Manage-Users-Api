@@ -3,12 +3,15 @@
 
 namespace App\Models;
 
+use App\Models\AuxTables\RegKeys;
 use App\Models\Pivots\HirerSystem;
 use App\Models\Pivots\UserHirerSystems;
 use App\Traits\Models\UsesUUID;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class Hirer extends Model
 {
@@ -39,13 +42,13 @@ class Hirer extends Model
         return $this->hasManyThrough(User::class, UserHirerSystems::class, 'hirer_id', 'id', 'id', 'user_id');
     }
 
-    public function regKeys(array $options)
+    public function regKeys()
     {
-
+        return $this->hasMany(RegKeys::class, 'hirer_id', 'id');
     }
 
-    public function newRegKey(\DateTime $expire)
+    static public function newRegKey()
     {
-
+        $key = Str::random(4).'-'.Str::random(4).'-'.Str::random(2);
     }
 }

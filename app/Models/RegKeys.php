@@ -5,11 +5,14 @@ namespace App\Models\AuxTables;
 
 
 use App\Traits\Assets\DateUtil;
+use App\Traits\Models\UsesUUID;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class RegKeys extends Model
 {
+    use UsesUUID;
+
     protected $primaryKey = "id";
 
     protected $table = 'hre_reg_key';

@@ -72,9 +72,9 @@ $router->group(['prefix' => 'api', 'middleware'=> 'removeExpiredToken'], functio
                 $router->post('/{id}/associateUser', 'HirerController@associateUser');
 
                 //falta implementar
-                $router->post('/{id}/createRegKey', 'HirerController@createRegKey');
-                $router->get('/{id}/getRegKey', 'HirerController@getRegKey');
-                $router->delete('/{id}/deleteRegKey', 'HirerController@deleteRegKey');
+                $router->post('/createRegKey', 'RegKeyController@createRegKey');
+                $router->get('/{id}/getRegKeys', 'RegKeyController@getRegKeys');
+                $router->delete('/{id}/deleteRegKey', 'RegKeyController@deleteRegKey');
             });
         });
     });

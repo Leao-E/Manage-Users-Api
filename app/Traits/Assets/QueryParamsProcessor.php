@@ -5,6 +5,7 @@ namespace App\Traits\Assets;
 use App\Exceptions\CustomExceptions\ApiException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use phpDocumentor\Reflection\Types\Object_;
 
@@ -24,7 +25,7 @@ trait QueryParamsProcessor {
      */
 
     function queryProcessor ($target, array $queryParams){
-        if (!$target instanceof Model and !$target instanceof Relation){
+        if (!$target instanceof Model and !$target instanceof Relation and !$target instanceof Builder){
             throw new ApiException('invalid target', 500);
         }
 
