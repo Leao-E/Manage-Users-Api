@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Auth\Authenticatable;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Lumen\Auth\Authorizable;
@@ -58,7 +59,32 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
 
     public function systems()
     {
-        return $this->hasManyThrough(System::class, UserHirerSystems::class, 'user_id', 'id', 'id', 'system_id');
+
+
+//        dd($this->hasManyThrough(
+//            System::class,
+//            UserHirerSystems::class,
+//            'user_id',
+//            'id',
+//            'id',
+//            'system_id'
+//        )->toSql());
+
+        return $this->hasManyThrough(
+            System::class,
+            UserHirerSystems::class,
+            'user_id',
+            'id',
+            'id',
+            'system_id'
+        )->whereExists(function ($query){
+            $now = DateUtil::now();
+            /** @var Builder $query */
+            $query->select('hre_hirer_systems.system_id')
+                ->whereRaw('`hre_hirer_systems`.`system_id` = `sys_systems`.`id`')
+                ->from('hre_hirer_systems')
+                ->where('hre_hirer_systems.dt_expire', '>', $now);
+        });
     }
 
     public function getJWTIdentifier()
