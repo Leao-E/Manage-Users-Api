@@ -1,10 +1,11 @@
 # Users Core API
 
-<img src="https://github.com/Leao-E/Manage-Users-Api/blob/master/heroimage.svg" align="right" width="500"/>
+<img src="https://github.com/Leao-E/Manage-Users-Api/blob/master/heroimage.svg" align="right" width="450"/>
 
 ## About
 
-The idea behind this API is to manage user, systems and the system's hirers. 
+The idea behind this API is to manage user, systems and the system's hirers.
+ 
 You can create hirers and associate they with your systems and then create and associate users, or you can simply make a register key and let the user make it own register.
 You can set an expiration time to the hirer license and can 
 
