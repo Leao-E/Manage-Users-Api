@@ -1,6 +1,6 @@
 # Users Core API
 
-<img src="https://media.sproutsocial.com/uploads/2017/02/10x-featured-social-media-image-size.png" align="right" width="100"/>
+<img src="https://github.com/Leao-E/Manage-Users-Api/blob/master/heroimage.svg" align="right" width="100"/>
 
 ## About
 
