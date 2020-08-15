@@ -59,7 +59,22 @@ You can use the following endpoints to manage:
 ## API Documentation
 
 ### GET Routes
+All get routes follow the pattern "api/resource/resource_id/action", where the resource can be "hirer", "system" or "user".
 
+The rosource_id is necessary only if the route needs it.
+
+The action variates from each resource, but in general every resource has the "getAll" and "get" actions.
+
+You can get the relations of each resource changing the action to the resource name, e.g. api/hirer/{hirer_id}/users.
+#### Outlier GET Routes
+##### api/hirer/{hirer_id}/self
+Every hirer is an entity that includes users and systems, so it needs an admin user that is responsible for the
+instance. This route returns the hirer instance admin data.  
+##### api/hirer/{hirer_id}/getRegKeys
+The hirer can provide a register key to user register itself in the Users Core. This route returns all the available 
+register keys associated with an specific hirer.  
+##### api/hirer/{hirer_id}/checkExpire  
+Every register key has an expiration time. This route returns the remaining lifetime of a register key.
 ### POST Routes
 
 ### PUT Routes
