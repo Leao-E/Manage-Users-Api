@@ -1,24 +1,56 @@
-# Lumen PHP Framework
+# Users Core API
 
-[![Build Status](https://travis-ci.org/laravel/lumen-framework.svg)](https://travis-ci.org/laravel/lumen-framework)
-[![Total Downloads](https://poser.pugx.org/laravel/lumen-framework/d/total.svg)](https://packagist.org/packages/laravel/lumen-framework)
-[![Latest Stable Version](https://poser.pugx.org/laravel/lumen-framework/v/stable.svg)](https://packagist.org/packages/laravel/lumen-framework)
-[![License](https://poser.pugx.org/laravel/lumen-framework/license.svg)](https://packagist.org/packages/laravel/lumen-framework)
+<img src="https://media.sproutsocial.com/uploads/2017/02/10x-featured-social-media-image-size.png" align="right" width="100"/>
 
-Laravel Lumen is a stunningly fast PHP micro-framework for building web applications with expressive, elegant syntax. We believe development must be an enjoyable, creative experience to be truly fulfilling. Lumen attempts to take the pain out of development by easing common tasks used in the majority of web projects, such as routing, database abstraction, queueing, and caching.
+## About
 
-## Official Documentation
+The idea behind this API is to manage user, systems and the system's hirers. 
+You can create hirers and associate they with your systems and then create and associate users, or you can simply make a register key and let the user make it own register.
+You can set an expiration time to the hirer license and can 
 
-Documentation for the framework can be found on the [Lumen website](https://lumen.laravel.com/docs).
+## Documentation
 
-## Contributing
+You can use the following endpoints to manage:
 
-Thank you for considering contributing to Lumen! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+* User Authentication:
+    * POST::api/login               
+    * POST::api/register
+    * POST::api/refreshToken
+    * POST::api/checkToken
+    * POST::api/logout
 
-## Security Vulnerabilities
+* Manage Users:
+    * GET::api/user/getAll
+    * GET::api/user/{user_id}/get
+    * GET::api/user/{user_id}/systems
+    * GET::api/user/{user_id}/hirers
+    * POST::api/user/create  
+    * PUT::api/user/{user_id}/update
+    * DELETE::api/user/{user_id}/delete      
 
-If you discover a security vulnerability within Lumen, please send an e-mail to Taylor Otwell at taylor@laravel.com. All security vulnerabilities will be promptly addressed.
+* Manage Systems:
+    * GET::api/system/getAll
+    * GET::api/system/{system_id}/get
+    * GET::api/system/{system_id}/hirers
+    * GET::api/system/{system_id}/users
+    * POST::api/system/create 
+    * PUT::api/system/{system_id}/update
+    * DELETE::api/system/{system_id}/delete
 
-## License
+* Manage Hirers:
+    * GET::api/hirer/getAll   
+    * GET::api/hirer/{hirer_id}/get
+    * GET::api/hirer/{hirer_id}/systems
+    * GET::api/hirer/{hirer_id}/users
+    * GET::api/hirer/{hirer_id}/self        
+    * GET::api/hirer/{hirer_id}/getRegKeys
+    * GET::api/hirer/{hirer_id}/checkExpire
+    * POST::api/hirer/create
+    * POST::api/hirer/createRegKey         
+    * PUT::api/hirer/{hirer_id}/update
+    * DELETE::api/hirer/{hirer_id}/delete
+    * DELETE::api/hirer/{hirer_id}/deleteRegKey   
 
-The Lumen framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+* Associate Entities
+    * POST::api/associate/UserHirerSystem
+    * POST::api/associate/HirerSystem
