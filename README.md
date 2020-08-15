@@ -2,14 +2,14 @@
 
 <img src="https://github.com/Leao-E/Manage-Users-Api/blob/master/heroimage.svg" align="right" width="450"/>
 
-## About
+## What it is?
 
 The idea behind this API is to manage user, systems and the system's hirers.
  
 You can create hirers and associate they with your systems and then create and associate users, or you can simply make a register key and let the user make it own register.
 You can set an expiration time to the hirer license and can 
 
-## Documentation
+## Routes
 
 You can use the following endpoints to manage:
 
@@ -55,3 +55,31 @@ You can use the following endpoints to manage:
 * Associate Entities
     * POST::api/associate/UserHirerSystem
     * POST::api/associate/HirerSystem
+
+## API Documentation
+
+### GET Routes
+
+#### api/user/getAll
+#### api/user/{user_id}/get
+#### api/user/{user_id}/systems
+#### api/user/{user_id}/hirers
+#### api/system/getAll
+#### api/system/{system_id}/get
+#### api/system/{system_id}/hirers
+#### api/system/{system_id}/users
+#### api/hirer/getAll   
+#### api/hirer/{hirer_id}/get
+#### api/hirer/{hirer_id}/systems
+#### api/hirer/{hirer_id}/users
+#### api/hirer/{hirer_id}/self        
+#### api/hirer/{hirer_id}/getRegKeys
+#### api/hirer/{hirer_id}/checkExpire
+
+### POST Routes
+
+### PUT Routes
+
+### DELETE Routes
+
+#### e
