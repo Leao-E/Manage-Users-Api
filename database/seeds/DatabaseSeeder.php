@@ -8,9 +8,9 @@ class DatabaseSeeder extends Seeder
     {
         // $this->call('UsersTableSeeder');
         $this->call(UsersSeeders::class);
-        $this->call(HirersSeeder::class);
-        $this->call(SystemSeeder::class);
-        $this->call(UserHirerSystemSeeder::class);
-        $this->call(HirerSystemsSeeder::class);
+        //$this->call(HirersSeeder::class);
+        //$this->call(SystemSeeder::class);
+        //$this->call(UserHirerSystemSeeder::class);
+        //$this->call(HirerSystemsSeeder::class);
     }
 }
