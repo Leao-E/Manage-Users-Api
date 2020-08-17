@@ -12,6 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Ramsey\Uuid\Uuid;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\Token;
 
 class AuthController extends BaseController
 {
@@ -23,21 +25,42 @@ class AuthController extends BaseController
 
     /*
      * author: Emanuel F.G. Leão
+     * resume: a função, a partir do bearer token do
+     * request, busca o usuário ao qual o token está
+     * associado.
+     */
+    public function self(Request $request)
+    {
+        $token = $request->bearerToken();
+
+        try {
+            $authToken = AuthToken::query()->where('token', $token)->firstOrFail();
+            $user = User::query()->findOrFail($authToken->user_id);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+        return response()->json($user, 200);
+    }
+
+    /*
+     * author: Emanuel F.G. Leão
      * resume: A função apaga o token informado do
      * banco
      */
     public function logout(Request $request)
     {
-        $this->validate($request, [
-            'token' => 'required|string',
-        ]);
+        $token = $request->bearerToken();
 
         try {
-            $authToken = AuthToken::query()->findOrFail($request->token);
+            $authToken = AuthToken::query()->where('token', $token)->firstOrFail();
         } catch (\Exception $e) {
             return response()->json(['error' => 'invalid token'], 404);
         }
+
         $authToken->delete();
+
+        JWTAuth::manager()->invalidate(new Token($authToken->token));
+
         return response()->json(['message' => 'user sucessful logout'], 200);
     }
 
@@ -150,12 +173,10 @@ class AuthController extends BaseController
      */
     public function checkToken(Request $request)
     {
-        $this->validate($request, [
-            'token' => 'required|string',
-        ]);
+        $token = $request->bearerToken();
 
         try {
-            $response = AuthToken::validateToken($request->token);
+            $response = AuthToken::validateToken($token);
         } catch (\Exception $e){
             return response()->json(['error' => 'invalid token'], 404);
         }
@@ -176,12 +197,10 @@ class AuthController extends BaseController
      */
     public function refreshToken(Request $request)
     {
-        $this->validate($request, [
-            'token' => 'required|string',
-        ]);
+        $token = $request->bearerToken();
 
         try {
-            $token = AuthToken::refreshToken($request->token);
+            $token = AuthToken::refreshToken($token);
         } catch (\Exception $e){
             return response()->json(['error' => 'invalid token'], 404);
         }
