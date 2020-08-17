@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\CustomExceptions\ApiException;
-use App\Models\Pivots\HirerSystem;
-use App\Models\Pivots\UserHirerSystems;
 use App\Models\System;
 use App\Traits\Assets\QueryParamsProcessor;
 use App\Traits\Controllers\SystemController\SystemBroker;
@@ -148,52 +146,6 @@ class SystemController extends BaseController
         }
 
         return response()->json($response, $status);
-    }
-
-    public function associateHirer(Request $request, $id)
-    {
-        try {
-            $system = System::query()->findOrFail($id);
-        } catch (\Exception $e){
-            return response()->json(['error' => $e->getMessage()], 404);
-        }
-        if (!$request->has('hirer_id')){
-            return response()->json(['error' => 'missing fields. try to send hirer_id and dt_expire (optional)'], 400);
-        }
-        try {
-            $hirerSystem = new HirerSystem();
-
-            $hirerSystem->createFromRequest($request->hirer_id, $system->id, $request->dt_expire);
-
-            $hirerSystem->save();
-        }catch (\Exception $e){
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-        return response()->json(['msg' => 'relations sucessfully created'], 201);
-    }
-
-    public function associateUser(Request $request, $id)
-    {
-        try {
-            $system = System::query()->findOrFail($id);
-        } catch (\Exception $e){
-            return response()->json(['error' => $e->getMessage()], 404);
-        }
-        if (!$request->has('hirer_id')){
-            return response()->json(['error' => 'missing fields. try to send hirer_id and dt_expire (optional)'], 400);
-        }
-        try {
-            $userHirerSystem = new UserHirerSystems();
-
-            $userHirerSystem->user_id = $request->user_id;
-            $userHirerSystem->hirer_id = $request->hirer_id;
-            $userHirerSystem->system_id = $system->id;
-
-            $userHirerSystem->save();;
-        }catch (\Exception $e){
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-        return response()->json(['msg' => 'relations sucessfully created'], 201);
     }
 
     public function deleteSystem ($id)

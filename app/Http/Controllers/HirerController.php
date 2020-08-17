@@ -4,11 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\CustomExceptions\ApiException;
 use App\Models\Hirer;
-use App\Models\Pivots\HirerSystem;
-use App\Models\Pivots\UserHirerSystems;
 use App\Traits\Assets\QueryParamsProcessor;
 use App\Traits\Controllers\HirerController\HirerBroker;
-use Cassandra\Date;
 use Illuminate\Http\Request;
 use Laravel\Lumen\Routing\Controller as BaseController;
 use phpDocumentor\Reflection\Types\Object_;
@@ -174,52 +171,6 @@ class HirerController extends BaseController
         }
 
         return response()->json($response, $status);
-    }
-
-    public function associateSystem(Request $request, $id)
-    {
-        try {
-            $hirer = Hirer::query()->findOrFail($id);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 404);
-        }
-        if (!$request->has('system_id')){
-            return response()->json(['error' => 'missing fields. try to send system_id and dt_expire (optional)'], 400);
-        }
-        try {
-            $hirerSystem = new HirerSystem();
-
-            $hirerSystem->createFromRequest($hirer->id, $request->system_id, $request->dt_expire);
-
-            $hirerSystem->save();
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-        return response()->json(['msg' => 'relations sucessfully created'], 201);
-    }
-
-    public function associateUser(Request $request, $id)
-    {
-        try {
-            $hirer = Hirer::query()->findOrFail($id);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 404);
-        }
-        if (!$request->has('user_id') or !$request->has('system_id')){
-            return response()->json(['error' => 'missing fields. try to send system_id and user_id'], 400);
-        }
-        try {
-            $userHirerSystem = new UserHirerSystems();
-
-            $userHirerSystem->user_id = $request->user_id;
-            $userHirerSystem->hirer_id = $hirer->id;
-            $userHirerSystem->system_id = $request->system_id;
-
-            $userHirerSystem->save();
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-        return response()->json(['msg' => 'relations sucessfully created'], 201);
     }
 
     public function deleteHirer ($id)

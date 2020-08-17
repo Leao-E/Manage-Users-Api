@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\CustomExceptions\ApiException;
+use App\Models\AuxTables\RegKeys;
 use App\Models\Pivots\UserHirerSystems;
 use App\Models\User;
 use App\Traits\Assets\QueryParamsProcessor;
 use App\Traits\Controllers\UserController\UserBroker;
+use \Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Laravel\Lumen\Routing\Controller as BaseController;
 use phpDocumentor\Reflection\Types\Object_;
@@ -68,6 +70,70 @@ class UserController extends BaseController
             $status = $e->getStatus();
             $response = ['error' => $e->getMessage()];
         }
+        return response()->json($response, $status);
+    }
+
+    public function registerUser(Request $request)
+    {
+        $this->validate($request, [
+            "unq_nick"=> "required|string|unique:usr_users",
+            "email" => "required|email|unique:usr_users",
+            "usr_type" => "required|string|in:PESSOA_FISICA, PESSOA_JURIDICA",
+            "name" => "required|string",
+            "dt_birth" => "required|string",
+            "cpf" => "required_if:usr_type,==,PESSOA_FISICA|unique:usr_users|string",
+            "cnpj" => "required_if:usr_type,==,PESSOA_JURIDICA|unique:usr_users|string",
+            "password" => "required|string",
+            'reg_key' => "required|string|exists:hre_reg_key"
+        ]);
+
+        try {
+            $dtBirth = Carbon::createFromFormat('d/m/Y', $request->dt_birth);
+        } catch (\Exception $e) {
+            return response(['error' => 'invalid dt_birth format. use dd/mm/yyyy'], 400);
+        }
+
+        $response = new Object_();
+        $status = 200;
+        $user = new User();
+
+        if (!RegKeys::isValidKey($request->reg_key)){
+            return response()->json(['error' => 'expired reg_key'], 400);
+        }
+
+        try {
+            $user->name = $request->name;
+            $user->unq_nick = $request->unq_nick;
+            $user->email = $request->email;
+            $user->usr_type = $request->usr_type;
+            $user->dt_birth = Carbon::createFromFormat('d/m/Y', $request->dt_birth);
+            if (isset($request->cpf)){
+                $user->cpf = $request->cpf;
+            }
+            if (isset($request->cpf)){
+                $user->cpf = $request->cpf;
+            }
+            $user->password = $request->password;
+
+            $user->save();
+
+            $regKey = RegKeys::query()->findOrFail($request->reg_key);
+
+            $userHirerSystem = new UserHirerSystems([
+                'user_id' => $user->id,
+                'hirer_id' => $regKey->hirer_id,
+                'system_id' => $regKey->system_id
+            ]);
+
+            $userHirerSystem->save();
+
+            $response = $user;
+
+        } catch (ApiException $e) {
+            $status = $e->getStatus();
+            $response = ['error' => $e->getMessage()];
+        }
+
         return response()->json($response, $status);
     }
 
@@ -144,30 +210,6 @@ class UserController extends BaseController
         }
 
         return response()->json($response, $status);
-    }
-
-    public function associateSystem(Request $request, $id)
-    {
-        try {
-            $user = User::query()->findOrFail($id);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 404);
-        }
-        if(!$request->has('hirer_id') or !$request->has('system_id')){
-            return response()->json(['error' => 'missing fields. try to send system id and hirer_id'], 400);
-        }
-        try {
-            $userHirerSystem = new UserHirerSystems();
-
-            $userHirerSystem->user_id = $user->id;
-            $userHirerSystem->hirer_id = $request->hirer_id;
-            $userHirerSystem->system_id = $request->system_id;
-
-            $userHirerSystem->save();
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-        return response()->json(['msg' => 'relations sucessfully created'], 201);
     }
 
     public function getHirers(Request $request, $id)
