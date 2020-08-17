@@ -72,16 +72,15 @@ $app->configure('app');
 |
 */
 
-// $app->middleware([
-//     App\Http\Middleware\ExampleMiddleware::class
-// ]);
+ $app->middleware([
+     'cors' => App\Http\Middleware\CORS::class
+ ]);
 
 $app->routeMiddleware([
     'auth' => App\Http\Middleware\Authenticate::class,
     'sudoOnly' => App\Http\Middleware\CheckIsSudo::class,
     'hirerOnly' => App\Http\Middleware\CheckIsHirer::class,
     'sudoOrHirer' => App\Http\Middleware\CheckIsSudoOrHirer::class,
-    'regKey' => App\Http\Middleware\CheckRegKey::class,
     'removeExpiredToken' => App\Http\Middleware\RemoveExpiredToken::class,
 ]);
 
