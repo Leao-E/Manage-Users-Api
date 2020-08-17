@@ -4,11 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\AuxTables\RegKeys;
 use App\Models\Hirer;
-use App\Traits\Assets\DateUtil;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Laravel\Lumen\Routing\Controller as BaseController;
 
 class RegKeyController extends BaseController
@@ -17,25 +14,24 @@ class RegKeyController extends BaseController
     {
         $this->validate($request, [
             'hirer_id' => 'required',
+            'system_id' => 'required',
             'name' => 'required',
-            'durationDays' => 'required',
+            'dt_expire' => 'required',
         ]);
 
-        if ($request->durationDays > 30){
-            return response()->json(['error' => 'max duration expired'], 400);
-        }
+        $dateArray = explode('/', $request->dt_expire);
 
-        $now = DateUtil::now();
+        $year = $dateArray[2];
+        $month = $dateArray[1];
+        $day = $dateArray[0];
 
-        $expire = $now->addDays($request->durationDays);
-
-        $key = Str::random(4).'-'.Str::random(4).'-'.Str::random(2);
+        $dt_expire = Carbon::create($year, $month, $day, 0, 0, 0);
 
         $regKey = new RegKeys([
-            'reg_key' => Hirer::newRegKey(),
             'name' => $request->name,
             'hirer_id' => $request->hirer_id,
-            'dt_expire' => $expire
+            'system_id' => $request->system_id,
+            'dt_expire' => $dt_expire
         ]);
 
         try {
