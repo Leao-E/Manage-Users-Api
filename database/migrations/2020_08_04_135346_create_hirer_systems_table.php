@@ -13,14 +13,13 @@ class CreateHirerSystemsTable extends Migration
     public function up()
     {
         Schema::create('hre_hirer_systems', function (Blueprint $table) {
+            $table->uuid('id')->primary();
             $table->foreignUuid('hirer_id');
             $table->foreignUuid('system_id');
             $table->dateTime('dt_expire');
             $table->string('status');
 
             $table->softDeletesTz();
-
-            $table->primary(['hirer_id', 'system_id'], 'hirer_systems_key');
 
             $table->foreign('hirer_id')
                 ->references('id')
