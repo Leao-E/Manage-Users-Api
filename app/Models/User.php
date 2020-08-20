@@ -4,6 +4,7 @@
 namespace App\Models;
 
 use App\Models\Pivots\UserHirerSystems;
+use App\Models\QueryProcessable\QueryProcessable;
 use App\Traits\Assets\DateUtil;
 use App\Traits\Models\UsesUUID;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Auth\Authenticatable;
-use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Builder as EloquentQueryBuilder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Lumen\Auth\Authorizable;
@@ -38,7 +39,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
     protected $casts = [
         'is_sudo' => 'boolean',
         'is_hirer' => 'boolean',
-        'dt_birth' => 'datetime:d-m-Y'
+        'dt_birth' => 'datetime:d/m/Y'
     ];
 
     protected $hidden = ['password'];
@@ -54,37 +55,63 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
 
     public function hirers()
     {
-        return $this->hasManyThrough(Hirer::class, UserHirerSystems::class, 'user_id', 'id', 'id', 'hirer_id');
+        $hirer = new Hirer();
+
+        $dbQuery = DB::table('hre_hirers')
+            ->select('hre_hirers.*')->distinct()
+            ->join('hre_hirer_systems', function ($joins){
+                $joins->on('hre_hirers.id', '=', 'hre_hirer_systems.hirer_id');
+            })
+            ->join('usr_user_hirer_systems', function ($joins) {
+                $joins->on('hre_hirer_systems.id', '=', 'usr_user_hirer_systems.hirer_system_id');
+            })
+            ->where('hre_hirers.deleted_at', '=', null)
+            ->where('hre_hirer_systems.deleted_at', '=', null)
+            ->where('usr_user_hirer_systems.deleted_at', '=', null)
+            ->where('usr_user_hirer_systems.user_id', $this->id);
+
+        $eloquentQuery = new EloquentQueryBuilder($dbQuery);
+
+        $eloquentQuery->setModel($hirer);
+
+        $columns = $hirer->getAttributes();
+
+        return new QueryProcessable($eloquentQuery, $columns);
+        //return $this->hasManyThrough(Hirer::class, UserHirerSystems::class, 'user_id', 'id', 'id', 'hirer_id');
     }
 
     public function systems()
     {
+        $system = new System();
+
+        $dbQuery = DB::table('sys_systems')
+            ->select([
+                'sys_systems.*', 'hre_hirer_systems.status', 'hre_hirer_systems.hirer_id'
+            ])
+            ->join('hre_hirer_systems', function ($joins) {
+                $joins->on('hre_hirer_systems.system_id', '=', 'sys_systems.id');
+            })
+            ->join('usr_user_hirer_systems', function ($joins) {
+                $joins->on('hre_hirer_systems.id', '=', 'usr_user_hirer_systems.hirer_system_id');
+            })
+            ->where('sys_systems.deleted_at', '=', null)
+            ->where('hre_hirer_systems.deleted_at', '=', null)
+            ->where('usr_user_hirer_systems.deleted_at', '=', null)
+            ->where('usr_user_hirer_systems.user_id', $this->id);
 
 
-//        dd($this->hasManyThrough(
-//            System::class,
-//            UserHirerSystems::class,
-//            'user_id',
-//            'id',
-//            'id',
-//            'system_id'
-//        )->toSql());
+        $eloquentQuery = new EloquentQueryBuilder($dbQuery);
+        $eloquentQuery->setModel($system);
 
-        return $this->hasManyThrough(
-            System::class,
-            UserHirerSystems::class,
-            'user_id',
-            'id',
-            'id',
-            'system_id'
-        )->whereExists(function ($query){
-            $now = DateUtil::now();
-            /** @var Builder $query */
-            $query->select('hre_hirer_systems.system_id')
-                ->whereRaw('`hre_hirer_systems`.`system_id` = `sys_systems`.`id`')
-                ->from('hre_hirer_systems')
-                ->where('hre_hirer_systems.dt_expire', '>', $now);
-        });
+        $columns = $system->getFillable();
+
+        foreach ($columns as $key => $column) {
+            $columns[$key] = $system->getTable().'.'.$column;
+        }
+
+        $columns [] = 'hre_hirer_systems.status';
+
+        return new QueryProcessable($eloquentQuery, $columns);
     }
 
     public function getJWTIdentifier()

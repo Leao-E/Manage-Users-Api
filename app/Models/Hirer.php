@@ -5,13 +5,12 @@ namespace App\Models;
 
 use App\Models\AuxTables\RegKeys;
 use App\Models\Pivots\HirerSystem;
-use App\Models\Pivots\UserHirerSystems;
+use App\Models\QueryProcessable\QueryProcessable;
 use App\Traits\Models\UsesUUID;
+use Illuminate\Database\Eloquent\Builder as EloquentQueryBuilder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class Hirer extends Model
 {
@@ -21,7 +20,7 @@ class Hirer extends Model
 
     protected $table = 'hre_hirers';
 
-    protected $fillable = ['name', 'hirer_type', 'user_id'];
+    protected $fillable = ['name', 'hirer_type', 'user_id', 'cnpj'];
 
     protected $dates = [
         'created_at', 'updated_at', 'deleted_at'
@@ -34,12 +33,49 @@ class Hirer extends Model
 
     public function systems()
     {
-        return $this->hasManyThrough(System::class, HirerSystem::class, 'hirer_id', 'id', 'id', 'system_id');
+        $system = new System();
+
+        $query = $this->hasManyThrough(System::class, HirerSystem::class, 'hirer_id', 'id', 'id', 'system_id')
+            ->select(['sys_systems.*', 'hre_hirer_systems.status'])->getQuery();
+
+        $columns = $system->getFillable();
+
+        foreach ($columns as $key => $column) {
+            $columns[$key] = $system->getTable().'.'.$column;
+        }
+
+        $columns [] = 'hre_hirer_systems.status';
+
+        return new QueryProcessable($query, $columns);
     }
 
     public function users()
     {
-        return $this->hasManyThrough(User::class, UserHirerSystems::class, 'hirer_id', 'id', 'id', 'user_id');
+        $dbQuery = DB::table('usr_users')->select('usr_users.*')->distinct()
+            ->join('usr_user_hirer_systems', function ($joins){
+                $joins->on('usr_user_hirer_systems.user_id', '=', 'usr_users.id');
+            })
+            ->join('hre_hirer_systems', function ($joins){
+                $joins->on('usr_user_hirer_systems.hirer_system_id', '=', 'hre_hirer_systems.id');
+            })
+            ->where('usr_users.deleted_at','=',null)
+            ->where('hre_hirer_systems.deleted_at','=',null)
+            ->where('usr_user_hirer_systems.deleted_at','=',null)
+            ->where('hre_hirer_systems.hirer_id', $this->id);
+
+        $user = new User();
+
+        $eloquentQuery = new EloquentQueryBuilder($dbQuery);
+
+        $eloquentQuery->setModel($user);
+
+        $columns = $user->getFillable();
+
+        foreach ($columns as $key => $column) {
+            $columns[$key] = $user->getTable().'.'.$column;
+        }
+
+        return new QueryProcessable($eloquentQuery, $columns);
     }
 
     public function regKeys()
@@ -47,8 +83,4 @@ class Hirer extends Model
         return $this->hasMany(RegKeys::class, 'hirer_id', 'id');
     }
 
-    static public function newRegKey()
-    {
-        $key = Str::random(4).'-'.Str::random(4).'-'.Str::random(2);
-    }
 }
