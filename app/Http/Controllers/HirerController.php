@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\CustomExceptions\ApiException;
 use App\Models\Hirer;
+use App\Models\QueryProcessable\QueryProcessable;
 use App\Traits\Assets\QueryParamsProcessor;
 use App\Traits\Controllers\HirerController\HirerBroker;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Laravel\Lumen\Routing\Controller as BaseController;
 use phpDocumentor\Reflection\Types\Object_;
@@ -28,9 +30,15 @@ class HirerController extends BaseController
 
         $queryParams = $request->query();
 
+        /** @var Builder $query */
+
+        $query = Hirer::all()->toQuery();
+        $columns = $hirer->getFillable();
+
+        $queryProcessable = new QueryProcessable($query, $columns);
         try {
             //processa os query params e retorna o response
-            $response = $this->queryProcessor($hirer, $queryParams);
+            $response = $this->queryProcessor($queryProcessable, $queryParams);
         } catch (ApiException $e) {
             $response = ['error' => $e->getMessage()];
             $status = $e->getStatus();
@@ -57,14 +65,13 @@ class HirerController extends BaseController
 
     public function getSystems (Request $request, $id)
     {
-        /** @var Hirer $hirer */
-        $hirer = new Hirer();
         $status = 200;
 
         $query_params = $request->query();
 
         try {
-            $hirer = $hirer->newQuery()->findOrFail($id);
+            /** @var Hirer $hirer */
+            $hirer = Hirer::query()->findOrFail($id);
             try {
                 $response = $this->queryProcessor($hirer->systems(), $query_params);
             } catch (ApiException $e) {

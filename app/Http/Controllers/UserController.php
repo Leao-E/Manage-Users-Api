@@ -5,9 +5,12 @@ namespace App\Http\Controllers;
 use App\Exceptions\CustomExceptions\ApiException;
 use App\Models\AuxTables\RegKeys;
 use App\Models\Pivots\UserHirerSystems;
+use App\Models\QueryProcessable\QueryProcessable;
 use App\Models\User;
 use App\Traits\Assets\QueryParamsProcessor;
 use App\Traits\Controllers\UserController\UserBroker;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use \Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Laravel\Lumen\Routing\Controller as BaseController;
@@ -26,8 +29,16 @@ class UserController extends BaseController
 
         $queryParams = $request->query();
 
+        /** @var Builder $query */
+
+        $query = User::all()->toQuery();
+
+        $columns = $user->getFillable();
+
+        $queryProcessable = new QueryProcessable($query, $columns);
+
         try {
-            $response = $this->queryProcessor($user, $queryParams);
+            $response = $this->queryProcessor($queryProcessable, $queryParams);
         } catch (ApiException $e) {
             $response = ['error' => $e->getMessage()];
             $status = $e->getStatus();
@@ -185,54 +196,44 @@ class UserController extends BaseController
 
     public function getSystems(Request $request, $id)
     {
-        /** @var User $user */
-        $user = new User();
         $status = 200;
-        $response = new Object_();
+
+        $query_params = $request->query();
 
         try {
-            $user = $user->findOrFail($id);
-            $response->data = $user->systems()->get();
-
-            $query_params = $request->query();
-
-            if ($this->canPaginate($query_params)){
-                try {
-                    $response = $this->paginate($response->data, $query_params);
-                }catch (\Exception $e){
-                    $response = ['error' => $e->getMessage()];
-                    $status = 400;
-                }
+            /** @var User $user */
+            $user = User::query()->findOrFail($id);
+            try {
+                $response = $this->queryProcessor($user->systems(), $query_params);
+            }catch (ApiException $e){
+                $response = ['error' => $e->getMessage()];
+                $status = $e->getStatus();
             }
         } catch (\Exception $e) {
             $response = ['error' => $e->getMessage()];
             $status = 404;
         }
+        /**@var Collection $e */
 
         return response()->json($response, $status);
     }
 
     public function getHirers(Request $request, $id)
     {
-        /** @var User $user */
-        $user = new User();
         $status = 200;
-        $response = new Object_();
+
+        $query_params = $request->query();
 
         try {
-            $user = $user->findOrFail($id);
-            $response->data = $user->hirers()->get();
+            $user = User::query()->findOrFail($id);
 
-            $query_params = $request->query();
-
-            if ($this->canPaginate($query_params)){
-                try {
-                    $response = $this->paginate($response->data, $query_params);
-                }catch (\Exception $e) {
-                    $response = ['error' => $e->getMessage()];
-                    $status = 400;
-                }
+            try {
+                $response = $this->queryProcessor($user->hirers(), $query_params);
+            }catch (\Exception $e) {
+                $response = ['error' => $e->getMessage()];
+                $status = 400;
             }
+
         } catch (\Exception $e) {
             $response = ['error' => $e->getMessage()];
             $status = 404;

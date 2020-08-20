@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\CustomExceptions\ApiException;
+use App\Models\QueryProcessable\QueryProcessable;
 use App\Models\System;
 use App\Traits\Assets\QueryParamsProcessor;
 use App\Traits\Controllers\SystemController\SystemBroker;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Laravel\Lumen\Routing\Controller as BaseController;
 use phpDocumentor\Reflection\Types\Object_;
@@ -22,9 +24,17 @@ class SystemController extends BaseController
 
         $queryParams = $request->query();
 
+        /** @var Builder $query */
+
+        $query = System::all()->toQuery();
+
+        $columns = $system->getFillable();
+
+        $queryProcessable = new QueryProcessable($query, $columns);
+
         try {
             //processa os query params e retorna o response
-            $response = $this->queryProcessor($system, $queryParams);
+            $response = $this->queryProcessor($queryProcessable, $queryParams);
         } catch (ApiException $e) {
             $response = ['error' => $e->getMessage()];
             $status = $e->getStatus();
