@@ -207,6 +207,31 @@ class AuthController extends BaseController
         return $this->respondWithToken($token);
     }
 
+    public function canAccessSystem(Request $request)
+    {
+        $this->validate($request, [
+            "user_id"=> "required|string|exists:usr_users,id",
+            "system_id" => "required|string|exists:sys_systems,id"
+        ]);
+
+        $count = DB::table('sys_systems')
+            ->join('hre_hirer_systems', function ($joins) {
+                $joins->on('hre_hirer_systems.system_id', '=', 'sys_systems.id');
+            })
+            ->join('usr_user_hirer_systems', function ($joins) {
+                $joins->on('usr_user_hirer_systems.hirer_system_id', '=', 'hre_hirer_systems.id');
+            })
+            ->where('hre_hirer_systems.system_id', '=', $request->system_id)
+            ->where('usr_user_hirer_systems.user_id', '=', $request->user_id)
+            ->count();
+
+        if ($count > 0){
+            return response()->json('Can Access', 200);
+        }else{
+            return response()->json('Unauthorized', 403);
+        }
+    }
+
     /*
      * Função padrão do JWT
      */
