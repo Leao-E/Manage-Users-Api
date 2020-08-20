@@ -3,6 +3,7 @@
 namespace App\Traits\Assets;
 
 use App\Exceptions\CustomExceptions\ApiException;
+use App\Models\QueryProcessable\QueryProcessable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Query\Builder;
@@ -11,7 +12,7 @@ use phpDocumentor\Reflection\Types\Object_;
 
 trait QueryParamsProcessor {
 
-    use Search, Order, Paginate;
+    use Search, Order, Paginate, GroupBy;
 
     /*
      * author: Emanuel F.G. Leão
@@ -24,44 +25,48 @@ trait QueryParamsProcessor {
      * A função retorna um Objeto anônimo.
      */
 
-    function queryProcessor ($target, array $queryParams){
-        if (!$target instanceof Model and !$target instanceof Relation and !$target instanceof Builder){
-            throw new ApiException('invalid target', 500);
-        }
-
+    function queryProcessor (QueryProcessable $target, array $queryParams){
+        /** @var Collection $collection */
         $response = new Object_();
         //busca
+
+        $query = $target->getQuery();
+        $columns = $target->getColumns();
+
         if ($this->canSearch($queryParams)){
             try {
-                $response->data = $this->search($target, $queryParams);
+                $collection = $this->search($query, $columns, $queryParams);
             } catch (ApiException $queryParamException) {
                 throw $queryParamException;
             }
         }else{
             try {
-                $response->data = $target->get();
+                $collection = $query->get();
             } catch (\Exception $exception) {
                 throw new ApiException($exception->getMessage(), 500);
             }
 
         }
         //total
-        $response->total = $response->data->count();
-        //ordenação
-        if ($this->canOrder($queryParams)){
-            try {
-                $this->order($response->data, $queryParams);
-            } catch (ApiException $queryParamException) {
-                throw $queryParamException;
+        $response->total = $collection->count();
+        try {
+            //ordenação
+            if ($this->canOrder($queryParams)){
+                $this->order($collection, $queryParams);
             }
-        }
-        //paginação
-        if ($this->canPaginate($queryParams)){
-            try {
-                $response = $this->paginate($response->data, $queryParams);
-            } catch (ApiException $queryParamException) {
-                throw $queryParamException;
+
+            //agrupar
+            if ($this->canGroup($queryParams)){
+                $this->group($collection, $queryParams);
             }
+
+            $response->data = $collection;
+            //paginação
+            if ($this->canPaginate($queryParams)){
+                $response = $this->paginate($collection, $queryParams);
+            }
+        } catch (ApiException $e) {
+            throw $e;
         }
 
         return $response;

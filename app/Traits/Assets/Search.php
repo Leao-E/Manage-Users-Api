@@ -32,8 +32,7 @@ trait Search {
      * PS: A função deve ser colocada num bloco try catch.
      * É esperado um ApiException
      */
-    function search ($searchble, array $queryParams){
-        /** @var Model $model */
+    function search (Builder $query, array $columns, array $queryParams){
         /** @var Builder $query */
         //checa os queryParams
         if (!$this->canSearch($queryParams)){
@@ -42,18 +41,6 @@ trait Search {
 
         $value = $queryParams['search'];
         //checa instância de searchble
-        if ($searchble instanceof Model){
-            $model = $searchble;
-            $query = $model->newQuery();
-        } elseif ($searchble instanceof Relation) {
-            /** @var Relation $searchble */
-            $model = $searchble->getModel();
-            $query = $searchble;
-        } else {
-            throw new ApiException('invalid searchble type', 500);
-        }
-
-        $columns = $model->getFillable();
 
         $last_index = count($columns);
 
