@@ -15,15 +15,17 @@
 $router->group(['prefix' => 'api', 'middleware'=> 'removeExpiredToken'], function () use ($router) {
     $router->post('login', 'AuthController@login');
 
-    $router->group(['middleware' => 'regKey'], function () use ($router){
-        $router->post('/register', 'UserController@newUser');
-    });
+
+
+    $router->post('/register', 'UserController@registerUser');
 
     $router->group(['middleware' => 'auth'], function () use ($router){
 
         $router->post('refreshToken', 'AuthController@refreshToken');
         $router->post('checkToken', 'AuthController@checkToken');
         $router->post('logout', 'AuthController@logout');
+        $router->post('self', 'AuthController@self');
+        $router->post('canAccessSystem', 'AuthController@canAccessSystem');
 
         $router->group(['prefix' => 'user'], function () use ($router) {
             $router->group(['middleware' => 'sudoOnly'], function ()  use ($router) {
@@ -49,7 +51,6 @@ $router->group(['prefix' => 'api', 'middleware'=> 'removeExpiredToken'], functio
             $router->get('/{id}/users', 'SystemController@getUsers');;
             $router->post('/create', 'SystemController@newSystem');
             $router->post('/{id}/associateHirer', 'SystemController@associateHirer');
-            $router->post('/{id}/associateUser', 'SystemController@associateUser');
             $router->put('/{id}/update', 'SystemController@updateSystem');
             $router->delete('/{id}/delete', 'SystemController@deleteSystem');
         });
@@ -58,7 +59,6 @@ $router->group(['prefix' => 'api', 'middleware'=> 'removeExpiredToken'], functio
             $router->group(['middleware' => 'sudoOnly'], function ()  use ($router) {
                 $router->get('/getAll', 'HirerController@getAllHirers');
                 $router->post('/create', 'HirerController@newHirer');
-                $router->post('/{id}/associateSystem', 'HirerController@associateSystem');
                 $router->put('/{id}/update', 'HirerController@updateHirer');
                 $router->delete('/{id}/delete', 'HirerController@deleteHirer');
             });
@@ -67,16 +67,27 @@ $router->group(['prefix' => 'api', 'middleware'=> 'removeExpiredToken'], functio
                 $router->get('/{id}/get', 'HirerController@getHirer');
                 $router->get('/{id}/systems', 'HirerController@getSystems');
                 $router->get('/{id}/users', 'HirerController@getUsers');
-                $router->get('/{id}/self', 'HirerController@getSelf');
-
-                $router->post('/{id}/associateUser', 'HirerController@associateUser');
-
-                //falta implementar
                 $router->post('/createRegKey', 'RegKeyController@createRegKey');
                 $router->get('/{id}/getRegKeys', 'RegKeyController@getRegKeys');
                 $router->delete('/{id}/deleteRegKey', 'RegKeyController@deleteRegKey');
             });
+
+            $router->group(['middleware' => 'hirerOnly'], function () use ($router) {
+                $router->get('/{id}/self', 'HirerController@getSelf');
+            });
+            //$router->get('/{id}/checkExpire','HirerController@checkExpire');
         });
+
+        $router->group(['middleware' => 'sudoOnly'], function () use ($router){
+            $router->post('/associate/hirerSystem', 'AssociateController@createHirerSystem');
+            $router->post('/unassociate/hirerSystem', 'AssociateController@removeHirerSystem');
+        });
+
+        $router->group(['middleware' => 'sudoOrHirer'], function () use ($router) {
+            $router->post('/associate/userHirerSystem', 'AssociateController@createUserHirerSystem');
+            $router->post('/unassociate/userHirerSystem', 'AssociateController@removeUserHirerSystem');
+        });
+
     });
 
 });
