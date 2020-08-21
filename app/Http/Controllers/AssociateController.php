@@ -19,10 +19,13 @@ class AssociateController extends BaseController
         ]);
         try {
             $userHirerSystem = new UserHirerSystems();
+            $hirerSystem = HirerSystem::query()
+                ->where('hirer_id', $request->hirer_id)
+                ->where('system_id', $request->system_id)
+                ->firstOrFail();
 
             $userHirerSystem->user_id = $request->user_id;
-            $userHirerSystem->hirer_id = $request->hirer_id;
-            $userHirerSystem->system_id = $request->system_id;
+            $userHirerSystem->hirer_system_id = $hirerSystem->id;
 
             $userHirerSystem->save();
         } catch (\Exception $e) {
@@ -63,8 +66,12 @@ class AssociateController extends BaseController
             'system_id' => 'required',
         ]);
         try {
+            $hirerSystem = HirerSystem::query()
+                ->where('hirer_id', $request->hirer_id)
+                ->where('system_id', $request->system_id)
+                ->firstOrFail();
             $userHirerSystem = UserHirerSystems::query()->where('user_id', $request->user_id)
-                ->where('hirer_id', $request->hirer_id)->where('system_id', $request->system_id)
+                ->where('hirer_system_id', $hirerSystem->id)
                 ->firstOrFail();
 
             $userHirerSystem->delete();
