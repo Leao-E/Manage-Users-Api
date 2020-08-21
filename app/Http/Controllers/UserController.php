@@ -10,9 +10,11 @@ use App\Models\User;
 use App\Traits\Assets\QueryParamsProcessor;
 use App\Traits\Controllers\UserController\UserBroker;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Builder as EloquentQueryBuilder;
 use Illuminate\Database\Eloquent\Collection;
 use \Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Laravel\Lumen\Routing\Controller as BaseController;
 use phpDocumentor\Reflection\Types\Object_;
 use App\Traits\Controllers\UserController\HirerController;
@@ -240,6 +242,52 @@ class UserController extends BaseController
         }
 
         return response()->json($response, $status);
+    }
+
+    public function search(Request $request)
+    {
+        $this->validate($request, [
+            "system_id" => "required_without:hirer_id|string",
+            "hirer_id" => "required_without:system_id|string",
+            "search" => "required|string",
+        ]);
+
+        $queryParams = $request->query();
+
+        $query = DB::table('usr_users')->select('usr_users.*')
+            ->distinct()
+            ->join('usr_user_hirer_systems', function ($joins) {
+                $joins->on('usr_user_hirer_systems.user_id', '=', 'usr_users.id');
+            })
+            ->join('hre_hirer_systems', function ($joins) {
+                $joins->on('hre_hirer_systems.id', '=', 'usr_user_hirer_systems.hirer_system_id');
+            });
+
+        if ($request->has('system_id')){
+            $query = $query->where('hre_hirer_systems.system_id', '=', $request->system_id);
+        }
+
+        if ($request->has('hirer_id')){
+            $query = $query->where('hre_hirer_systems.hirer_id', '=', $request->hirer_id);
+        }
+
+        $user = new User();
+        $table = $user->getTable();
+        $columns = $user->getFillable();
+
+        foreach ($columns as $key => $column) {
+            $column_name = $table.'.'.$column;
+            $query = $query->orWhere($column_name, '=', $request->search);
+            $columns [$key] = $column_name;
+        }
+
+
+        $eloquentQuery = new EloquentQueryBuilder($query);
+        $eloquentQuery->setModel($user);
+
+        $response = $this->queryProcessor(new QueryProcessable($eloquentQuery, $columns), $queryParams);
+
+        return response()->json($response, 200);
     }
 }
 

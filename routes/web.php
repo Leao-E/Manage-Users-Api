@@ -14,7 +14,7 @@
 
 $router->group(['prefix' => 'api', 'middleware'=> 'removeExpiredToken'], function () use ($router) {
     $router->post('login', 'AuthController@login');
-
+    $router->post('checkToken', 'AuthController@checkToken');
 
 
     $router->post('/register', 'UserController@registerUser');
@@ -22,7 +22,6 @@ $router->group(['prefix' => 'api', 'middleware'=> 'removeExpiredToken'], functio
     $router->group(['middleware' => 'auth'], function () use ($router){
 
         $router->post('refreshToken', 'AuthController@refreshToken');
-        $router->post('checkToken', 'AuthController@checkToken');
         $router->post('logout', 'AuthController@logout');
         $router->post('self', 'AuthController@self');
         $router->post('canAccessSystem', 'AuthController@canAccessSystem');
@@ -33,8 +32,8 @@ $router->group(['prefix' => 'api', 'middleware'=> 'removeExpiredToken'], functio
             });
 
             $router->group(['middleware' => 'sudoOrHirer'], function () use ($router){
+                $router->post('/search', 'UserController@search');
                 $router->post('/create', 'UserController@newUser');
-                $router->post('{id}/associateSystem', 'UserController@associateSystem');
                 $router->delete('/{id}/delete', 'UserController@deleteUser');
             });
             $router->get('/{id}/get', 'UserController@getUser');
@@ -48,9 +47,8 @@ $router->group(['prefix' => 'api', 'middleware'=> 'removeExpiredToken'], functio
             $router->get('/getAll', 'SystemController@getAllSystems');
             $router->get('/{id}/get', 'SystemController@getSystem');
             $router->get('/{id}/hirers', 'SystemController@getHirers');
-            $router->get('/{id}/users', 'SystemController@getUsers');;
+            $router->get('/{id}/users', 'SystemController@getUsers');
             $router->post('/create', 'SystemController@newSystem');
-            $router->post('/{id}/associateHirer', 'SystemController@associateHirer');
             $router->put('/{id}/update', 'SystemController@updateSystem');
             $router->delete('/{id}/delete', 'SystemController@deleteSystem');
         });
